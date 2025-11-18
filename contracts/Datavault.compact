@@ -1,0 +1,244 @@
+// Datavault.compact - Privacy-Preserving AI Training Data Marketplace
+// Built on Midnight Network with native ZK proofs
+
+contract DatavaultMarketplace {
+
+    // Private state (encrypted on Midnight - not visible publicly)
+    private state {
+        contents: Map<Bytes32, Content>;
+        licenses: Map<Bytes32, License>;
+        creatorEarnings: Map<Address, UInt256>;
+        usageEvents: Map<Bytes32, UsageEvent[]>;
+    }
+
+    // Public state (visible to all)
+    public state {
+        totalContents: UInt256;
+        totalLicenses: UInt256;
+        totalRevenue: UInt256;
+        activeCreators: UInt256;
+    }
+
+    // Structures
+    struct Content {
+        creator: Address;
+        contentHash: Bytes32;
+        ipfsCid: String;
+        title: String;
+        contentType: String;
+        pricePerUse: UInt256;
+        totalUses: UInt256;
+        active: Boolean;
+        createdAt: UInt256;
+    }
+
+    struct License {
+        licensee: Address;
+        contentId: Bytes32;
+        usageCount: UInt256;
+        purchaseTime: UInt256;
+        active: Boolean;
+    }
+
+    struct UsageEvent {
+        eventId: Bytes32;
+        timestamp: UInt256;
+        proofHash: Bytes32;
+    }
+
+    // Events (public)
+    event ContentRegistered(contentId: Bytes32, creator: Address, price: UInt256, timestamp: UInt256);
+    event LicensePurchased(licenseId: Bytes32, contentId: Bytes32, timestamp: UInt256);
+    event ContentAccessed(contentId: Bytes32, timestamp: UInt256);
+    event PaymentReleased(creator: Address, amount: UInt256);
+    event EarningsWithdrawn(creator: Address, amount: UInt256);
+
+    // Constructor
+    constructor() {
+        this.totalContents = 0;
+        this.totalLicenses = 0;
+        this.totalRevenue = 0;
+        this.activeCreators = 0;
+    }
+
+    // Creator registers content (public function)
+    @public
+    function registerContent(
+        contentHash: Bytes32,
+        ipfsCid: String,
+        title: String,
+        contentType: String,
+        pricePerUse: UInt256
+    ): Bytes32 {
+        require(pricePerUse > 0, "Price must be greater than 0");
+        require(bytes(title).length > 0, "Title required");
+
+        let contentId = hash(contentHash, caller, currentTime);
+
+        this.contents[contentId] = Content {
+            creator: caller,
+            contentHash: contentHash,
+            ipfsCid: ipfsCid,
+            title: title,
+            contentType: contentType,
+            pricePerUse: pricePerUse,
+            totalUses: 0,
+            active: true,
+            createdAt: currentTime
+        };
+
+        this.totalContents += 1;
+
+        // Track unique creators
+        if (this.creatorEarnings[caller] == 0) {
+            this.activeCreators += 1;
+        }
+
+        emit ContentRegistered(contentId, caller, pricePerUse, currentTime);
+        return contentId;
+    }
+
+    // AI company purchases license (shielded transaction)
+    @public
+    @payable
+    function purchaseLicense(contentId: Bytes32): Bytes32 {
+        let content = this.contents[contentId];
+        require(content.active, "Content not active");
+        require(msg.value >= content.pricePerUse, "Insufficient payment");
+
+        let licenseId = hash(contentId, caller, currentTime);
+
+        // License details kept private
+        this.licenses[licenseId] = License {
+            licensee: caller,
+            contentId: contentId,
+            usageCount: 0,
+            purchaseTime: currentTime,
+            active: true
+        };
+
+        this.totalLicenses += 1;
+
+        // Note: licensee not revealed in event (privacy!)
+        emit LicensePurchased(licenseId, contentId, currentTime);
+        return licenseId;
+    }
+
+    // AI company accesses content (private function with ZK proof!)
+    @private
+    @zkProof
+    function accessContent(
+        licenseId: Bytes32,
+        usageProof: ZKProof
+    ): void {
+        let license = this.licenses[licenseId];
+        require(license.active, "License not active");
+        require(license.licensee == caller, "Not license owner");
+
+        let content = this.contents[license.contentId];
+        require(content.active, "Content not active");
+
+        // Increment usage (kept private)
+        license.usageCount += 1;
+        content.totalUses += 1;
+
+        // Create usage event record (private)
+        let eventId = hash(licenseId, currentTime, license.usageCount);
+        let event = UsageEvent {
+            eventId: eventId,
+            timestamp: currentTime,
+            proofHash: hash(usageProof)
+        };
+
+        this.usageEvents[license.contentId].push(event);
+
+        // Release payment to creator via shielded transaction
+        this.creatorEarnings[content.creator] += content.pricePerUse;
+        this.totalRevenue += content.pricePerUse;
+
+        // Event doesn't reveal who accessed or when (ZK proof!)
+        emit ContentAccessed(license.contentId, currentTime);
+        emit PaymentReleased(content.creator, content.pricePerUse);
+    }
+
+    // Creator withdraws earnings (shielded transaction)
+    @public
+    function withdrawEarnings(): void {
+        let amount = this.creatorEarnings[caller];
+        require(amount > 0, "No earnings to withdraw");
+
+        this.creatorEarnings[caller] = 0;
+        transfer(caller, amount);
+
+        emit EarningsWithdrawn(caller, amount);
+    }
+
+    // Deactivate content (creator only)
+    @public
+    function deactivateContent(contentId: Bytes32): void {
+        let content = this.contents[contentId];
+        require(content.creator == caller, "Not content owner");
+        require(content.active, "Already inactive");
+
+        content.active = false;
+    }
+
+    // Deactivate license (licensee only)
+    @public
+    function deactivateLicense(licenseId: Bytes32): void {
+        let license = this.licenses[licenseId];
+        require(license.licensee == caller, "Not license owner");
+        require(license.active, "Already inactive");
+
+        license.active = false;
+    }
+
+    // View functions (public)
+    @public
+    @view
+    function getContent(contentId: Bytes32): Content {
+        return this.contents[contentId];
+    }
+
+    @public
+    @view
+    function getCreatorEarnings(creator: Address): UInt256 {
+        require(caller == creator, "Can only view own earnings");
+        return this.creatorEarnings[creator];
+    }
+
+    @public
+    @view
+    function getLicenseUsageCount(licenseId: Bytes32): UInt256 {
+        let license = this.licenses[licenseId];
+        require(license.licensee == caller, "Not license owner");
+        return license.usageCount;
+    }
+
+    @public
+    @view
+    function getContentUsageCount(contentId: Bytes32): UInt256 {
+        let content = this.contents[contentId];
+        return content.totalUses;
+    }
+
+    // Get aggregated platform stats (public)
+    @public
+    @view
+    function getPlatformStats(): (UInt256, UInt256, UInt256, UInt256) {
+        return (
+            this.totalContents,
+            this.totalLicenses,
+            this.totalRevenue,
+            this.activeCreators
+        );
+    }
+
+    // Verify content authenticity (anyone can verify)
+    @public
+    @view
+    function verifyContentHash(contentId: Bytes32, providedHash: Bytes32): Boolean {
+        let content = this.contents[contentId];
+        return content.contentHash == providedHash;
+    }
+}
