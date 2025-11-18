@@ -280,38 +280,6 @@ GET    /api/content/{id}    # Content metadata
 
 ---
 
-## 📅 3-Day Development Plan
-
-### Day 1: Foundation (0-24h)
-**Goal**: Smart contract + basic UI working
-
-- ✅ Setup Next.js + Hardhat
-- ✅ Write & deploy smart contract
-- ✅ Creator upload page
-- ✅ Marketplace browse page
-- ✅ Test: Upload content end-to-end
-
-### Day 2: Core Loop (24-48h)
-**Goal**: Complete purchase → access → payment flow
-
-- ✅ License purchase UI + contract call
-- ✅ Content access API with usage logging
-- ✅ Creator & AI Company dashboards
-- ✅ Test: Full flow with 2 accounts
-
-### Day 3: Demo Prep (48-72h)
-**Goal**: Polish + presentation
-
-- ✅ Bug fixes & UI polish
-- ✅ Create demo accounts & sample data
-- ✅ Presentation deck (5 slides)
-- ✅ Practice demo (3 times)
-- ✅ Deploy to Vercel
-
-**See detailed plan**: [HACKATHON_SIMPLIFIED_PLAN.md](./docs/HACKATHON_SIMPLIFIED_PLAN.md)
-
----
-
 ## 🧪 Testing
 
 ```bash
@@ -343,26 +311,6 @@ npm start
 
 - **Karthika Jayaprakash** - Backend/Smart Contracts
 - **Darshan Bhanushali** - AI/Backend/Privacy Layer
-- **[Frontend Dev]** - Frontend/UI
-
----
-
-## 🎯 Success Criteria
-
-### Must Have (Demo Ready)
-- [ ] Compact contract deployed to Midnight testnet
-- [ ] Creator can upload content
-- [ ] AI company can purchase license
-- [ ] AI company can access content
-- [ ] Usage logged on-chain with ZK proof (Midnight native)
-- [ ] Payment auto-released to creator using shielded transactions
-- [ ] Working demo start-to-finish on Midnight Network
-
-### Nice to Have
-- [ ] Polished UI
-- [ ] Multiple content items
-- [ ] Mobile responsive
-- [ ] Backup demo video
 
 ---
 
@@ -389,30 +337,6 @@ npm start
 - Token economics
 
 See full roadmap: [FUTURE_ENHANCEMENTS.md](./docs/FUTURE_ENHANCEMENTS.md)
-
----
-
-## 🏆 Why This Will Win
-
-### Innovation (40%)
-- ✅ First privacy-preserving AI training data marketplace
-- ✅ Novel use of blockchain for content licensing
-- ✅ Solves real problem (AI lawsuits, creator rights)
-
-### Technical Excellence (30%)
-- ✅ Clean smart contract design
-- ✅ Privacy mechanism (upgradeable to full ZK)
-- ✅ Working end-to-end demo
-
-### Feasibility (20%)
-- ✅ Realistic scope for hackathon
-- ✅ Clear path to production
-- ✅ Market exists ($X billion AI training data industry)
-
-### Presentation (10%)
-- ✅ Clear problem statement
-- ✅ Live working demo
-- ✅ Strong storytelling
 
 ---
 
@@ -476,23 +400,3 @@ MIT License - see [LICENSE](./LICENSE) file
 
 ---
 
-## 🚦 Getting Started Checklist
-
-**Before hackathon:**
-- [ ] All team members have Node.js 18+ installed
-- [ ] Midnight Wallet setup and testnet tokens obtained
-- [ ] Midnight CLI tools installed
-- [ ] Repository cloned and dependencies installed
-- [ ] Test local Midnight node works
-- [ ] Agreed on tech stack and roles
-
-**Day 1 morning:**
-- [ ] Deploy Compact contract to Midnight testnet
-- [ ] Basic Next.js app running with Midnight wallet integration
-- [ ] Database schema created
-
-**Ready to build on Midnight! 🚀**
-
----
-
-**Let's make AI training data licensing private, provable, and fair.**
